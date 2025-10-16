@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Charades - Webcam</title>
+<style>
+body { font-family: Arial, sans-serif; background:#111; color:#eee; display:flex; flex-direction:column; align-items:center; padding:20px;}
+#wrap { position:relative; display:inline-block; }
+video { border-radius:4px; transform: scaleX(-1); } /* mirror */
+canvas { display:none; }
+#overlay { position:absolute; left:10px; top:10px; background:rgba(0,0,0,0.5); padding:6px 10px; border-radius:6px; color:#0f0; font-weight:600; }
+#status { margin-top:12px; color:#aaa; font-size:0.9rem; cursor:pointer; }
+</style>
+</head>
+<body>
+<h2>AI Charades - Webcam</h2>
+<div id="wrap">
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <div id="overlay">Waiting for predictions...</div>
+</div>
+<div id="status">Connecting...</div>
+<script src="app.js"></script>
+</body>
+</html>
