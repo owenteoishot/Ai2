@@ -25,6 +25,7 @@ import base64
 import json
 import logging
 import sys
+import os
 import time
 from typing import List
 
@@ -239,6 +240,43 @@ def load_model_checkpoint(ckpt_path: str):
 
     model.eval()
     return model, CLASSES, in_ch
+
+
+# Load model at FastAPI startup so `uvicorn aiModel.webapp.backend:app` works.
+# Uses environment variables AI_MODEL_PATH and AI_SEQ_LEN if provided.
+@app.on_event("startup")
+async def startup_event():
+    """
+    Attempt to load the checkpoint on application startup. If loading fails we
+    set app.state.model to None (the websocket handler will return an explicit
+    error "model_not_loaded"). This avoids requiring users to run the script
+    directly and makes `uvicorn ...` work.
+    """
+    model_path = os.environ.get("AI_MODEL_PATH", "aiModel/models/ai_charades_tcn2.pt")
+    try:
+        seq_len = int(os.environ.get("AI_SEQ_LEN", "48"))
+    except Exception:
+        seq_len = 48
+
+    # Default state
+    app.state.model = None
+    app.state.actions = None
+    app.state.in_channels = None
+    app.state.seq_len = seq_len
+
+    logger.info(f"Startup: attempting to load model from '{model_path}' (seq_len={seq_len})")
+    try:
+        # load_model_checkpoint may call sys.exit on fatal errors; catch SystemExit
+        model, classes, in_ch = load_model_checkpoint(model_path)
+        app.state.model = model
+        app.state.actions = classes
+        app.state.in_channels = in_ch
+        app.state.seq_len = seq_len
+        logger.info(f"Model loaded on startup: '{model_path}' classes={len(classes)} in_ch={in_ch}")
+    except SystemExit as e:
+        logger.error(f"Model failed to load on startup (SystemExit): {e}. WebSockets will return model_not_loaded until fixed.")
+    except Exception as e:
+        logger.exception(f"Unexpected error loading model on startup: {e}. App will continue without a model.")
 
 
 def parse_args():

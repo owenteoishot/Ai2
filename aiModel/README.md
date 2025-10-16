@@ -1,28 +1,107 @@
-AI Charades — webcam demo
+# AI Model Webapp
+A small web frontend + backend to run the pose-classification model from webcam frames.
 
-Quick start (example commands)
+## Quick Start
 
-1) Create & activate a virtual environment
-# POSIX / macOS
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Windows (cmd.exe)
+# create & activate venv (from root folder)
 python -m venv .venv
-.venv\Scripts\activate
+.\.venv\Scripts\activate
 
-2) Install dependencies
+# install deps(from root .venv)
 pip install -r aiModel/requirements.txt
 
-3) Run the webcam demo
-python aiModel/run_webcam.py --model aiModel/models/ai_charades_tcn2.pt --camera 0
+# ensure uvicorn websocket support (inside venv)
+pip install "uvicorn[standard]"
 
-4) Run tests
-python -m pytest
+# start with uvicorn
+uvicorn aiModel.webapp.backend:app --host 127.0.0.1 --port 8000 --reload
 
-Recommended one-line launch.json snippet (add to configurations array)
-{"name":"Run AI Charades","type":"python","request":"launch","program":"${workspaceFolder}/aiModel/run_webcam.py","args":["--model","${workspaceFolder}/aiModel/models/ai_charades_tcn2.pt","--camera","0"]}
+# open frontend
+ http://127.0.0.1:8000/static/index.html
 
-Notes
-- Model files (aiModel/models/*.pt) and dataset folders are large; do not commit them if you add or replace models.
-- If the checkpoint fails to load, the script prints an error and exits with status 1.
+
+you will have to wait for a minute or so for the model to warm up
+
+## Slow Start
+
+Windows (cmd.exe)
+
+```bash
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r aiModel/requirements.txt
+```
+
+Start server (script)
+
+```bash
+python aiModel/webapp/backend.py --host 127.0.0.1 --port 8000 --model aiModel/models/ai_charades_tcn2.pt
+```
+
+Start server (uvicorn)
+
+```bash
+uvicorn aiModel.webapp.backend:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Note: ensure websockets support:
+
+```bash
+pip install "uvicorn[standard]"
+```
+
+Open the frontend:
+
+```text
+http://127.0.0.1:8000/static/index.html
+```
+
+macOS / Linux
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r aiModel/requirements.txt
+```
+
+Set env vars and run with uvicorn
+
+Windows (cmd):
+
+```bash
+set AI_MODEL_PATH=aiModel/models/ai_charades_tcn2.pt && set AI_SEQ_LEN=48 && uvicorn aiModel.webapp.backend:app --host 127.0.0.1 --port 8000 --reload
+```
+
+macOS/Linux:
+
+```bash
+AI_MODEL_PATH=aiModel/models/ai_charades_tcn2.pt AI_SEQ_LEN=48 uvicorn aiModel.webapp.backend:app --host 127.0.0.1 --port 8000 --reload
+```
+
+## Troubleshooting
+
+- WebSocket 404 or "Unsupported upgrade": install uvicorn extras and restart:
+
+```bash
+pip install "uvicorn[standard]"
+```
+
+- Frontend shows "model_not_loaded": ensure the model is loaded at server startup or set AI_MODEL_PATH and restart. Example restart:
+
+Windows:
+
+```bash
+set AI_MODEL_PATH=aiModel/models/ai_charades_tcn2.pt && uvicorn aiModel.webapp.backend:app --host 127.0.0.1 --port 8000 --reload
+```
+
+macOS/Linux:
+
+```bash
+AI_MODEL_PATH=aiModel/models/ai_charades_tcn2.pt uvicorn aiModel.webapp.backend:app --host 127.0.0.1 --port 8000 --reload
+```
+
+- Check server logs in the terminal where you started the script/uvicorn. Test health:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
