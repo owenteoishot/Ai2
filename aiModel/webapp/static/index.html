@@ -5,20 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>AI Charades - Webcam</title>
 <style>
-body { font-family: Arial, sans-serif; background:#111; color:#eee; display:flex; flex-direction:column; align-items:center; padding:20px;}
-#wrap { position:relative; display:inline-block; }
-video { border-radius:4px; transform: scaleX(-1); } /* mirror */
-canvas { display:none; }
-#overlay { position:absolute; left:10px; top:10px; background:rgba(0,0,0,0.5); padding:6px 10px; border-radius:6px; color:#0f0; font-weight:600; }
+body { font-family: Arial, sans-serif; background:#111; color:#eee; display:flex; flex-direction:column; align-items:flex-start; padding:20px;} /* align-items set to flex-start to align content to left edge */
+#content { display:flex; width:100%; gap:24px; align-items:center; min-height:60vh; } /* vertically center children; use min-height so very short viewports still work */
+#wrap { position:relative; width:50vw; display:flex; justify-content:center; align-items:center; } /* center video vertically inside left half */
+video { width:100%; height:auto; border-radius:4px; transform: scaleX(-1); } /* make video scale to #wrap width and preserve mirror */
+canvas { display:none; } /* preserve canvas rule */
+#overlay { position:absolute; left:10px; top:10px; background:rgba(0,0,0,0.5); padding:6px 10px; border-radius:6px; color:#0f0; font-weight:600; } /* preserve overlay rule */
+#rightCard { width:50vw; display:flex; justify-content:center; align-items:center; padding:24px; box-sizing:border-box; } /* increase horizontal padding to 24px for spacing while keeping centering */
+.card { background:#1b1b1b; border-radius:8px; padding:18px; width:100%; max-width:520px; color:#eee; box-shadow: 0 6px 18px rgba(0,0,0,0.5); } /* visual card style */
 #status { margin-top:12px; color:#aaa; font-size:0.9rem; cursor:pointer; }
 </style>
 </head>
 <body>
 <h2>AI Charades - Webcam</h2>
-<div id="wrap">
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas"></canvas>
-  <div id="overlay">Waiting for predictions...</div>
+<div id="content">
+  <div id="wrap">
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+    <div id="overlay">Waiting for predictions...</div>
+  </div>
+  <div id="rightCard" class="card">Placeholder card — add content here later</div>
 </div>
 <div id="status">Connecting...</div>
 <script src="app.js"></script>

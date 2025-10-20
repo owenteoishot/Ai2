@@ -12,6 +12,7 @@ Behavior:
   const canvas = document.getElementById("canvas");
   const overlay = document.getElementById("overlay");
   const status = document.getElementById("status");
+  const rightCard = document.getElementById("rightCard"); // query right-side card safely (may be null)
 
   let ws = null;
   let sendInterval = null;
@@ -62,9 +63,14 @@ Behavior:
           overlay.textContent = `Error: ${msg.error}`;
           return;
         }
-        const label = msg.label ?? "unknown";
-        const conf = (typeof msg.confidence === "number") ? (msg.confidence * 100).toFixed(1) + "%" : "";
-        overlay.textContent = `${label} ${conf}`;
+        // robust label/conf extraction supporting legacy and new message formats
+        let label = msg.label ?? msg.prediction ?? "unknown"; // prefer label, fallback to prediction
+        let conf = msg.confidence ?? msg.confidence_pct ?? 0; // support either confidence field
+        // preserve existing overlay formatting/behavior for on-video text (do not change)
+        const overlayConf = (typeof msg.confidence === "number") ? (msg.confidence * 100).toFixed(1) + "%" : "";
+        overlay.textContent = `${label} ${overlayConf}`;
+        // also update the separate right-side card (safe no-op if rightCard missing)
+        updateRightCard(label, conf);
       } catch (e) {
         console.warn("Invalid message", e, ev.data);
       }
@@ -91,8 +97,8 @@ Behavior:
 
   function startSendingFrames() {
     if (sendInterval) return;
-    // capture every 500ms
-    sendInterval = setInterval(captureAndSend, 500);
+    // capture every 100ms
+    sendInterval = setInterval(captureAndSend, 100);
     captureAndSend(); // immediate
   }
 
@@ -101,6 +107,18 @@ Behavior:
       clearInterval(sendInterval);
       sendInterval = null;
     }
+  }
+
+  // updateRightCard(prediction, confidence): safely update the right-side card display (no-op if missing)
+  function updateRightCard(prediction, confidence) {
+    if (!rightCard) return; // leave rightCard untouched when not present
+    // normalize confidence to a number and treat values <=1 as fractions
+    const confNum = Number(confidence) || 0;
+    const confPct = (confNum > 0 && confNum <= 1) ? confNum * 100 : confNum;
+    const confStr = confPct.toFixed(1) + "%";
+    rightCard.innerHTML = '<div class="prediction"><div class="pred-label">' +
+      String(prediction ?? "unknown") +
+      '</div><div class="pred-conf">' + confStr + '</div></div>';
   }
 
   function captureAndSend() {
