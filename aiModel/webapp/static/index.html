@@ -5,26 +5,90 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>AI Charades - Webcam</title>
 <style>
-body { font-family: Arial, sans-serif; background:#111; color:#eee; display:flex; flex-direction:column; align-items:flex-start; padding:20px;} /* align-items set to flex-start to align content to left edge */
-#content { display:flex; width:100%; gap:24px; align-items:center; min-height:60vh; } /* vertically center children; use min-height so very short viewports still work */
-#wrap { position:relative; width:50vw; display:flex; justify-content:center; align-items:center; } /* center video vertically inside left half */
-video { width:100%; height:auto; border-radius:4px; transform: scaleX(-1); } /* make video scale to #wrap width and preserve mirror */
-canvas { display:none; } /* preserve canvas rule */
-#overlay { position:absolute; left:10px; top:10px; background:rgba(0,0,0,0.5); padding:6px 10px; border-radius:6px; color:#0f0; font-weight:600; } /* preserve overlay rule */
-#rightCard { width:50vw; display:flex; justify-content:center; align-items:center; padding:24px; box-sizing:border-box; } /* increase horizontal padding to 24px for spacing while keeping centering */
-.card { background:#1b1b1b; border-radius:8px; padding:18px; width:100%; max-width:520px; color:#eee; box-shadow: 0 6px 18px rgba(0,0,0,0.5); } /* visual card style */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+body { font-family: Arial, sans-serif; background:#0b0f18; color:#eee; display:flex; flex-direction:column; align-items:flex-start; padding:20px; }
+
+/* Brand (top-left)
+   Drop a local PNG at aiModel/webapp/static/brand.png (named exactly "brand.png") to replace the logo.
+   The <img> uses src="brand.png" and falls back to https://via.placeholder.com/48.png when not present. */
+#brand {
+  position:fixed;
+  top:12px;
+  left:12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:6px 10px;
+  background: rgba(255,255,255,0.03);
+  border-radius:10px;
+  z-index:9999;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  pointer-events:auto;
+}
+#brand img { width:48px; height:48px; border-radius:8px; display:block; object-fit:cover; }
+#brand .brand-name,
+#brand .name { /* support both .brand-name and legacy .name selector without breaking JS */
+  font-weight:700;
+  font-size:1.05rem;
+  color:#ffd166;
+  font-family:'Fredoka One', 'Comic Sans MS', Arial, sans-serif;
+  text-shadow:0 2px 6px rgba(0,0,0,0.6);
+}
+
+/* Layout */
+#content { display:flex; width:100%; gap:24px; align-items:center; min-height:60vh; }
+#wrap { position:relative; width:50vw; display:flex; justify-content:center; align-items:center; }
+video { width:100%; height:auto; border-radius:8px; transform: scaleX(-1); box-shadow: 0 8px 30px rgba(0,0,0,0.6); }
+canvas { display:none; }
+#overlay { position:absolute; left:10px; top:10px; background:rgba(0,0,0,0.5); padding:6px 10px; border-radius:6px; color:#0f0; font-weight:600; }
+
+/* Right-side gamified card */
+#rightCard { width:50vw; display:flex; justify-content:center; align-items:center; padding:24px; box-sizing:border-box; }
+.card { position:relative; background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); border-radius:16px; padding:28px; width:100%; max-width:520px; color:#fff; box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03); font-family:'Fredoka One', 'Comic Sans MS', Arial, sans-serif; }
+
+/* Card content */
+.card-title { text-align:center; font-size:1.8rem; margin:4px 0 12px; letter-spacing:1px; }
+.card-body { text-align:center; color:rgba(255,255,255,0.95); font-size:1rem; }
+
+/* Score / badge in corner */
+.score-badge { position:absolute; top:12px; right:12px; background:rgba(255,255,255,0.95); color:#1b1b1b; padding:6px 10px; border-radius:999px; font-weight:800; box-shadow:0 6px 18px rgba(0,0,0,0.4); display:flex; align-items:center; gap:8px; }
+.score-badge .star { font-size:16px; color:#f6c85f; }
+
+/* Status */
 #status { margin-top:12px; color:#aaa; font-size:0.9rem; cursor:pointer; }
+
+/* Ensure brand image is not cropped — target specific img id */
+#brand-img {
+  height:48px;
+  width:auto;
+  object-fit:contain;
+  display:inline-block;
+  max-width:100%;
+}
 </style>
 </head>
 <body>
-<h2>AI Charades - Webcam</h2>
+<!-- Place a local PNG at aiModel/webapp/static/brand.png (name exactly "brand.png") to replace this logo -->
+<div id="brand" class="brand" aria-label="Ai Charades brand">
+  <img id="brand-img" src="brand.png" alt="Brand" style="height:48px;width:auto;object-fit:contain;max-width:100%;display:inline-block;" onerror="this.src='https://via.placeholder.com/48.png';" />
+  <!-- added inline style to ensure brand.png displays fully -->
+  <span class="brand-name">Ai Charades</span>
+</div>
 <div id="content">
   <div id="wrap">
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
+    <!--
     <div id="overlay">Waiting for predictions...</div>
+    -->
+    <div id="overlay" style="display:none;"></div>
   </div>
-  <div id="rightCard" class="card">Placeholder card — add content here later</div>
+  <div id="rightCard" class="card">
+    <div class="score-badge"><span class="star">★</span><span class="score">0</span></div>
+    <h3 class="card-title">Ai Charades</h3>
+    <div class="card-body">Ready to play — strike a pose and let the AI guess!</div>
+  </div>
 </div>
 <div id="status">Connecting...</div>
 <script src="app.js"></script>
