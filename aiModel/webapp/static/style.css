@@ -1,0 +1,184 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+/* Global variables */
+:root {
+  --bg:#071022;
+  --bg-2:#0b1220;
+  --card:#0f1724aa;
+  --glass: rgba(255,255,255,0.04);
+  --muted:#9aa6b2;
+  --accent:#7c5cff;
+  --accent-2:#3dd5ff;
+  --glass-border: rgba(255,255,255,0.06);
+  --text:#e6eef8;
+  --success:#53e2a1;
+  --warning:#ffb86b;
+  --shadow: 0 8px 30px rgba(2,6,23,0.6);
+}
+
+/* Reset & base */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg,var(--bg),var(--bg-2));
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* Header / brand */
+.site-header{
+  position:fixed;
+  top:12px;
+  left:12px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  z-index:9999;
+}
+#brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 12px;
+  border-radius:12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(6px) saturate(1.1);
+  border:1px solid var(--glass-border);
+}
+#brand-img{width:48px;height:48px;border-radius:8px;object-fit:contain;display:block}
+.brand-name{font-weight:700;color:var(--accent);display:block}
+.brand-tag{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+
+/* Main layout */
+.game{
+  display:grid;
+  grid-template-columns: 1fr 420px;
+  gap:20px;
+  align-items:start;
+  padding:88px 24px 32px 24px; /* top padding to avoid header */
+  max-width:1200px;
+  margin:0 auto;
+  width:100%;
+}
+
+.panel{background:transparent}
+
+/* Webcam panel */
+.webcam-panel{display:flex;flex-direction:column;gap:12px}
+.video-wrap{
+  position:relative;
+  width:100%;
+  aspect-ratio: 16/9;
+  border-radius:14px;
+  overflow:hidden;
+  background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border:1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+}
+
+/* Keep ID-specific sizing to match JS expectations */
+#video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
+#canvas{display:none}
+.overlay{
+  position:absolute;
+  left:12px;
+  top:12px;
+  background: rgba(0,0,0,0.5);
+  color:var(--success);
+  padding:6px 10px;
+  border-radius:8px;
+  font-weight:600;
+  font-size:13px;
+  backdrop-filter: blur(6px);
+  border:1px solid rgba(255,255,255,0.03);
+}
+
+/* Start/Reset controls and button styles removed — restore .controls and .btn rules here if needed */
+
+/* Right card */
+.right-card-panel{display:flex;justify-content:center;align-items:flex-start}
+.card{
+  width:100%;
+  max-width:420px;
+  border-radius:14px;
+  padding:22px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  border:1px solid var(--glass-border);
+  box-shadow: 0 16px 40px rgba(3,7,18,0.6);
+  backdrop-filter: blur(8px);
+  position:relative;
+}
+.score-badge{position:absolute;top:14px;right:14px;background:linear-gradient(90deg,#fff,#fff);color:#0b1220;padding:6px 10px;border-radius:999px;font-weight:800;display:inline-flex;align-items:center;gap:8px;box-shadow:0 10px 24px rgba(7,10,25,0.6)}
+.score-badge .star{color:#ffbf49}
+.card-title{margin:10px 0;font-size:20px;letter-spacing:0.4px;color:var(--accent)}
+.card-body{color:var(--text);font-size:15px;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;padding-top:8px}
+
+.hint{color:var(--muted);font-size:13px}
+
+/* Prediction area */
+.prediction{
+  width:100%;
+  min-height:72px;
+  border-radius:10px;
+  padding:12px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  font-weight:700;
+  color:var(--text);
+  background: linear-gradient(90deg, rgba(124,92,255,0.12), rgba(61,213,255,0.06));
+  border:1px solid rgba(255,255,255,0.03);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+  transition: transform .28s cubic-bezier(.2,.9,.2,1), opacity .25s ease, background .35s ease;
+  will-change:transform,opacity;
+}
+
+.prediction--pulse{animation:predictionPulse .9s ease both}
+@keyframes predictionPulse{
+  0%{transform:scale(0.97);opacity:0.6}
+  50%{transform:scale(1.02);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
+
+.status{color:var(--muted);font-size:13px;margin-top:6px}
+
+/* Footer */
+.site-footer{margin:18px auto 28px; text-align:center;color:var(--muted)}
+
+/* Small hover/focus effects for accessibility */
+button:focus, .btn:focus{outline:2px solid rgba(124,92,255,0.18);outline-offset:3px}
+a{color:var(--accent)}
+
+/* Responsive */
+@media (max-width:980px){
+  .game{grid-template-columns:1fr 360px;padding-top:100px;gap:16px}
+  .card{max-width:360px}
+}
+@media (max-width:720px){
+  .game{grid-template-columns:1fr; padding:120px 16px 32px 16px; gap:14px}
+  .site-header{left:12px;right:12px;display:flex;justify-content:space-between}
+  .brand-tag{display:none}
+  .right-card-panel{order:2}
+  .webcam-panel{order:1}
+  .video-wrap{aspect-ratio: 4/3}
+}
+
+/* Utility */
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* Subtle entrance */
+.card, .video-wrap{transform:translateY(6px);opacity:0;animation:enterFade .6s ease forwards}
+@keyframes enterFade{to{transform:none;opacity:1}}
+
+/* Reduce motion preference */
+@media (prefers-reduced-motion:reduce){
+  .card,.video-wrap,.prediction{animation:none;transition:none}
+}
