@@ -27,7 +27,7 @@
       <div class="video-wrap" id="wrap">
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas" aria-hidden="true"></canvas>
-        <!-- Commented out on-video green prediction (top-left) so it is hidden for now.
+        <!-- Commented out on-video green prediction (top-left) so it is hidden for now. dis only used for debugging
              Original element preserved in comment for easy restore:
              <div id="overlay" class="overlay" aria-hidden="true"></div>
         -->
@@ -54,6 +54,16 @@
 
           <!-- Prediction output: keep id="prediction" exactly for integration -->
           <div id="prediction" class="prediction" aria-atomic="true">—</div>
+
+          <!-- Game controls: interacts with WebSocket via {"cmd":"game",...} -->
+          <div id="gameControls" class="game-controls" aria-live="polite">
+            <div id="gameCurrent" class="game-current">🎯 Current: —</div>
+            <div class="game-stats"><span id="gameScore">0</span> pts • <span id="gameTimer">30</span>s</div>
+            <div class="game-actions">
+              <button id="startBtn" class="btn primary">Start</button>
+              <button id="resetBtn" class="btn">Reset</button>
+            </div>
+          </div>
 
           <div id="status" class="status">Connecting...</div>
         </div>

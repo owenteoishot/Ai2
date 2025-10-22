@@ -37,6 +37,11 @@ import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+import random
+
+# Game constants
+GAME_CONF_THRESH = 0.85
+FALLBACK_ACTIONS = ["Running", "Nodding", "Calling", "Playing games", "Boxing", "Air guitar"]
 
 # Try to reuse normalization and TCN from existing script; fallback copies are small.
 try:
@@ -128,9 +133,41 @@ async def websocket_endpoint(websocket: WebSocket):
     seq_len = getattr(app.state, "seq_len", 48)
     model = getattr(app.state, "model", None)
     actions = getattr(app.state, "actions", None)
-
+    
     # per-connection sliding buffer (in-memory)
     sequence: List[np.ndarray] = []
+    
+    # per-connection game state
+    # Use explicit fallback: prefer provided non-empty actions list, otherwise FALLBACK_ACTIONS
+    game = {"actions": (actions if actions is not None and len(actions) > 0 else FALLBACK_ACTIONS), "current": None, "prev": None, "score": 0, "end_ts": 0, "isActive": False, "duration": 30}
+
+    def pick_next_action(g):
+        """Pick a random action different from the previous one (if possible)."""
+        acts = g.get("actions") or FALLBACK_ACTIONS
+        if not acts:
+            g["prev"] = g.get("current")
+            g["current"] = None
+            return None
+        if len(acts) == 1:
+            cand = acts[0]
+        else:
+            cand = random.choice(acts)
+            attempts = 0
+            while cand == g.get("prev") and attempts < 10:
+                cand = random.choice(acts)
+                attempts += 1
+        g["prev"] = g.get("current")
+        g["current"] = cand
+        return cand
+
+    def game_payload(g):
+        """Return a serializable game payload for the client."""
+        now_ms = int(time.time() * 1000)
+        remaining = max(0, int((g.get("end_ts", 0) - now_ms) / 1000))
+        # auto-deactivate if time expired
+        if g.get("isActive") and remaining <= 0:
+            g["isActive"] = False
+        return {"currentAction": g.get("current"), "score": int(g.get("score", 0)), "remaining": remaining, "isGameActive": bool(g.get("isActive", False))}
 
     mp_pose = mp.solutions.pose
     pose = mp_pose.Pose()
@@ -142,6 +179,26 @@ async def websocket_endpoint(websocket: WebSocket):
                 pkt = json.loads(data_text)
             except Exception:
                 await websocket.send_text(json.dumps({"error": "invalid_json"}))
+                continue
+
+            # handle control commands (game) sent over the same websocket
+            if isinstance(pkt, dict) and pkt.get("cmd") == "game":
+                action_cmd = pkt.get("action")
+                now_ms = int(time.time() * 1000)
+                if action_cmd == "start":
+                    game["score"] = 0
+                    game["isActive"] = True
+                    game["end_ts"] = now_ms + int(game.get("duration", 30)) * 1000
+                    pick_next_action(game)
+                elif action_cmd == "reset":
+                    game["isActive"] = False
+                    game["score"] = 0
+                    game["end_ts"] = 0
+                    game["prev"] = None
+                    game["current"] = None
+                # send acknowledgement including current game state
+                ack = {"cmd": "game", "action": action_cmd, "game": game_payload(game), "timestamp": now_ms}
+                await websocket.send_text(json.dumps(ack))
                 continue
 
             frame_b64 = pkt.get("frame")
@@ -196,7 +253,22 @@ async def websocket_endpoint(websocket: WebSocket):
                         await websocket.send_text(json.dumps({"error": "model_not_loaded"}))
                     else:
                         label, confidence = await run_inference(model, actions, x_tensor)
-                        resp = {"label": label, "confidence": float(confidence), "timestamp": int(time.time() * 1000)}
+                        # game evaluation: check match and update score/target when active
+                        now_ms = int(time.time() * 1000)
+                        remaining = max(0, int((game.get("end_ts", 0) - now_ms) / 1000))
+                        if game.get("isActive") and remaining > 0:
+                            try:
+                                if label == game.get("current") and float(confidence) >= GAME_CONF_THRESH:
+                                    game["score"] = int(game.get("score", 0)) + 1
+                                    game["prev"] = game.get("current")
+                                    pick_next_action(game)
+                            except Exception:
+                                # defensive: do not let game logic break inference flow
+                                pass
+                        if game.get("isActive") and remaining <= 0:
+                            game["isActive"] = False
+
+                        resp = {"label": label, "confidence": float(confidence), "timestamp": now_ms, "game": game_payload(game)}
                         await websocket.send_text(json.dumps(resp))
                 except Exception as e:
                     await websocket.send_text(json.dumps({"error": "inference_failed", "detail": str(e)}))
