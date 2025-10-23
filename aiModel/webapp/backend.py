@@ -144,18 +144,29 @@ async def websocket_endpoint(websocket: WebSocket):
     def pick_next_action(g):
         """Pick a random action different from the previous one (if possible)."""
         acts = g.get("actions") or FALLBACK_ACTIONS
-        if not acts:
+        # defensive: ensure acts is a list-like
+        try:
+            acts_list = list(acts)
+        except Exception:
+            # invalid actions list; clear current and prev, return None
             g["prev"] = g.get("current")
             g["current"] = None
             return None
-        if len(acts) == 1:
-            cand = acts[0]
+        if not acts_list:
+            g["prev"] = g.get("current")
+            g["current"] = None
+            return None
+
+        prev = g.get("prev")
+        # build candidates excluding prev
+        candidates = [a for a in acts_list if a != prev]
+        if candidates:
+            cand = random.choice(candidates)
         else:
-            cand = random.choice(acts)
-            attempts = 0
-            while cand == g.get("prev") and attempts < 10:
-                cand = random.choice(acts)
-                attempts += 1
+            # only candidate is same as prev (single-item list) — return it
+            cand = acts_list[0]
+
+        # update state: prev becomes previous current, current becomes chosen
         g["prev"] = g.get("current")
         g["current"] = cand
         return cand

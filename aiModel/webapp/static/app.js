@@ -95,6 +95,24 @@ Behavior:
         overlay.textContent = `${label} ${overlayConf}`;
         // also update the separate right-side card (safe no-op if rightCard missing)
         updateRightCard(label, conf);
+
+        // Mirror prediction to sidebar and prediction meta elements (if present)
+        try {
+          const sidebarPred = document.getElementById("sidebarPrediction");
+          if (sidebarPred) {
+            sidebarPred.textContent = `${label} ${overlayConf}`;
+          }
+          const predConfEl = document.getElementById("predConf");
+          if (predConfEl) {
+            // normalize confidence to percentage string
+            const confNum = Number(conf) || 0;
+            const pct = (confNum > 0 && confNum <= 1) ? (confNum * 100).toFixed(1) : confNum.toFixed(1);
+            predConfEl.textContent = pct + "%";
+          }
+        } catch (e) {
+          console.warn("Failed to update sidebar/prediction meta", e);
+        }
+
         // update game UI if backend included a game payload
         if (msg.game) {
           updateGameUI(msg.game);

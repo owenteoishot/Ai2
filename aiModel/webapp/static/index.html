@@ -3,79 +3,218 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI Charades — Webcam</title>
+  <title>AI Charades — Layout</title>
   <link rel="stylesheet" href="./style.css">
+  <style>
+    /* Layout overrides for one-page sidebar/main layout */
+    :root {
+      --sidebar-width: 24%;
+      --gap: 20px;
+      --card-bg: rgba(15, 23, 36, 0.7);
+      --accent: #7c5cff;
+      --muted: #9aa6b2;
+      --text: #e6eef8;
+      --shadow: 0 12px 40px rgba(2,6,23,0.6);
+    }
+
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;background:linear-gradient(180deg,#071022,#0b1220);color:var(--text)}
+
+    .app-layout {
+      display:flex;
+      min-height:100vh;
+      gap:var(--gap);
+      padding:24px;
+      box-sizing:border-box;
+      align-items:flex-start;
+      justify-content:center;
+    }
+
+    /* Sidebar: fixed-ish column */
+    .sidebar{
+      width:var(--sidebar-width);
+      min-width:220px;
+      max-width:320px;
+      background:var(--card-bg);
+      border-radius:12px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      align-items:stretch;
+      box-sizing:border-box;
+      border:1px solid rgba(255,255,255,0.03);
+      height:calc(100vh - 48px);
+      position:sticky;
+      top:24px;
+    }
+
+    .brand-area{display:flex;align-items:center;gap:12px}
+    .brand-logo{width:48px;height:48px;object-fit:contain;border-radius:8px}
+    .brand-name{font-weight:700;color:var(--accent)}
+    .brand-tag{font-size:12px;color:var(--muted)}
+
+    /* large sidebar prediction badge (green) shown below brand */
+    .big-prediction{display:flex;justify-content:center}
+    .sidebar-prediction{
+      background: rgba(83,226,161,0.08);
+      color:#53e2a1;
+      font-weight:800;
+      padding:12px 14px;
+      border-radius:10px;
+      border:1px solid rgba(83,226,161,0.12);
+      font-size:18px;
+      min-width:140px;
+      text-align:center;
+      box-shadow: 0 8px 20px rgba(2,6,23,0.45);
+    }
+
+    .controls-vertical{display:flex;flex-direction:column;gap:14px;margin-top:8px}
+
+    .shuffler{font-weight:700;font-size:16px;color:var(--accent);background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;text-align:center}
+    .timer-wrap{display:flex;flex-direction:column;align-items:center;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02)}
+    .timer-value{font-size:22px;font-weight:800;color:var(--text)}
+
+    .sidebar-buttons{display:flex;flex-direction:column;gap:10px}
+    .btn{padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text);cursor:pointer;font-weight:700}
+    .btn.primary{background:linear-gradient(90deg,var(--accent),#3dd5ff);color:#fff;border:none}
+
+    .score-wrap{margin-top:auto;text-align:center;padding:10px;border-radius:8px;background:rgba(255,255,255,0.01)}
+    .score-value{font-weight:800;font-size:20px;color:var(--accent)}
+
+    .status{font-size:13px;color:var(--muted);text-align:center;padding-top:6px}
+
+    /* Main content */
+    .main-content{
+      width:calc(100% - var(--sidebar-width) - var(--gap));
+      max-width:1100px;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      box-sizing:border-box;
+    }
+
+    .media-area{
+      background:transparent;
+      border-radius:12px;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:48vh;
+    }
+
+    .media-wrap{
+      width:100%;
+      height:100%;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.03);
+      box-shadow:var(--shadow);
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    #video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
+    #canvas{display:none}
+    .overlay{
+      position:absolute;
+      left:16px;
+      top:16px;
+      background: rgba(0,0,0,0.65);
+      color: #53e2a1;
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-weight: 900;
+      font-size: 26px;
+      line-height: 1;
+      border: 2px solid rgba(83,226,161,0.22);
+      z-index: 999;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      max-width: 60%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transform-origin: left top;
+    }
+
+    .prediction-area{display:flex;align-items:center;justify-content:center;min-height:28vh}
+    .prediction-card{
+      width:min(560px,100%);
+      background:var(--card-bg);
+      border-radius:12px;
+      padding:20px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(255,255,255,0.04);
+      text-align:center;
+    }
+
+    .prediction{font-weight:800;font-size:20px;margin:12px 0;color:var(--text)}
+    .prediction-meta{display:flex;gap:8px;align-items:center;justify-content:center;color:var(--muted)}
+
+    /* Responsive */
+    @media (max-width:980px){
+      .app-layout{flex-direction:column;padding:16px}
+      .sidebar{width:100%;height:auto;position:static}
+      .main-content{width:100%}
+      .media-area{min-height:40vh}
+    }
+  </style>
 </head>
 <body>
-  <!-- Place a local PNG at aiModel/webapp/static/brand.png (name exactly "brand.png") to replace this logo -->
-  <header class="site-header" role="banner" aria-label="Main header">
-    <div id="brand" class="brand" aria-label="Ai Charades brand">
-      <img id="brand-img" src="spai.png" alt="Brand"/>
-      <div>
-        <span class="brand-name">Ai Charades</span>
-        <small class="brand-tag">Live pose recognition</small>
-      </div>
-    </div>
-    <nav class="top-actions" aria-label="Top actions">
-      <!-- reserved for future buttons; keep empty so JS selectors remain safe -->
-    </nav>
-  </header>
-
-  <main class="game" role="main">
-    <section class="panel webcam-panel" aria-label="Webcam feed">
-      <!-- Preserve existing webcam video id exactly so backend/JS hooks continue to work -->
-      <div class="video-wrap" id="wrap">
-        <video id="video" autoplay playsinline></video>
-        <canvas id="canvas" aria-hidden="true"></canvas>
-        <!-- Commented out on-video green prediction (top-left) so it is hidden for now. dis only used for debugging
-             Original element preserved in comment for easy restore:
-             <div id="overlay" class="overlay" aria-hidden="true"></div>
-        -->
-        <div id="overlay" class="overlay" aria-hidden="true" style="display:none;"></div>
-      </div>
-      <!-- Start/Reset removed — restore buttons here if needed.
-           Example markup to restore:
-           <div class="controls" role="group" aria-label="Controls">
-             <button id="startBtn" class="btn primary">Start</button>
-             <button id="resetBtn" class="btn">Reset</button>
-           </div>
-      -->
-    </section>
-
-    <aside class="panel right-card-panel" aria-label="Prediction and score">
-      <div id="rightCard" class="card" role="region" aria-live="polite">
-        <!-- Score badge removed per request. Restore original markup if needed:
-             <div class="score-badge" aria-hidden="true"><span class="star">★</span><span class="score">0</span></div>
-        -->
-        <h1 class="card-title">Ai Charades</h1>
-
-        <div class="card-body">
-          <p class="hint">Strike a pose — the model will try to guess.</p>
-
-          <!-- Prediction output: keep id="prediction" exactly for integration -->
-          <div id="prediction" class="prediction" aria-atomic="true">—</div>
-
-          <!-- Game controls: interacts with WebSocket via {"cmd":"game",...} -->
-          <div id="gameControls" class="game-controls" aria-live="polite">
-            <div id="gameCurrent" class="game-current">🎯 Current: —</div>
-            <div class="game-stats"><span id="gameScore">0</span> pts • <span id="gameTimer">30</span>s</div>
-            <div class="game-actions">
-              <button id="startBtn" class="btn primary">Start</button>
-              <button id="resetBtn" class="btn">Reset</button>
-            </div>
-          </div>
-
-          <div id="status" class="status">Connecting...</div>
+  <div class="app-layout">
+    <aside class="sidebar" role="navigation" aria-label="Main sidebar">
+      <div class="brand-area">
+        <img src="spai.png" alt="Brand" class="brand-logo" />
+        <div>
+          <div class="brand-name">Ai Charades</div>
+          <div class="brand-tag">Live pose recognition</div>
         </div>
       </div>
+
+      <div class="big-prediction" aria-live="polite" role="status" style="display:flex;justify-content:center;">
+        <!-- <div id="sidebarPrediction" class="sidebar-prediction">—</div> -->
+      </div>
+
+      <div class="controls-vertical" role="region" aria-label="Game controls">
+        <div id="gameCurrent" class="shuffler">🎯 Current: —</div>
+
+        <div class="timer-wrap">
+          <div class="timer-label">Time</div>
+          <div id="gameTimer" class="timer-value">30</div>
+        </div>
+
+        <div class="sidebar-buttons">
+          <button id="startBtn" class="btn primary">Start</button>
+          <button id="resetBtn" class="btn">Reset</button>
+        </div>
+
+        <div class="score-wrap" aria-live="polite">
+          <div class="score-label">Score</div>
+          <div id="gameScore" class="score-value">0</div>
+        </div>
+
+        <div id="status" class="status">Connecting...</div>
+      </div>
     </aside>
-  </main>
 
-  <footer class="site-footer" role="contentinfo">
-    <small>Model running locally • <span class="version">v1</span></small>
-  </footer>
+    <main class="main-content" role="main">
+      <section class="media-area" aria-label="User media">
+        <div class="media-wrap">
+          <video id="video" autoplay playsinline></video>
+          <canvas id="canvas" aria-hidden="true"></canvas>
+          <div id="overlay" class="overlay" aria-hidden="true">—</div>
+        </div>
+      </section>
 
-  <!-- Keep script includes intact so backend JS still attaches -->
+      <!-- prediction card removed per user request -->
+    </main>
+  </div>
+
+  <!-- Preserve existing frontend script include -->
   <script src="app.js"></script>
 </body>
 </html>
